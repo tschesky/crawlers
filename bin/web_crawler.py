@@ -15,6 +15,8 @@ import pandas as pd
 from sqlalchemy import create_engine
 import psycopg2
 
+DB_CONN = 'postgresql://mlfootball:p3f6f7hs@localhost/mlfootball'
+
 # WEB_CRAWLER.PY
 #
 # This script downloads a list of fixtures for specified league. Then it extracts only
@@ -114,7 +116,7 @@ def downloadLeagueFixturesFromFlashscore(league='premiere', delta=datetime.timed
 # Take a whole dataframe and insert contets into a specified table
 def loadDataFrameToPostgresqlTable(df, tableName):
   df.columns = [c.lower() for c in df.columns] #postgres doesn't like capitals or spaces
-  engine = create_engine('postgresql://mlfootball:p3f6f7hs@89.69.62.221:5432/mlfootball')
+  engine = create_engine(DB_CONN)
   df.to_sql(tableName, engine, if_exists='append', index_label='match_id')
 
 
@@ -129,6 +131,7 @@ def parseConfigFile(fileName=None):
   return englishList, spanishList
 
 def createDataBaseConnection(parameters):
+  logger = logging.getLogger('web_crawler')
   try:
     conn = psycopg2.connect(parameters)
   except Exception, e:
@@ -142,7 +145,7 @@ def createDataBaseConnection(parameters):
 def loadDataFrameToPostgresqlTableWithUpdate(df, tableName):
   logger = logging.getLogger('web_crawler')
   logger.info("ENTER: %40s" % inspect.currentframe().f_code.co_name)
-  conn = createDataBaseConnection("postgresql://mlfootball:p3f6f7hs@89.69.62.221:5432/mlfootball")
+  conn = createDataBaseConnection(DB_CONN)
   cur = conn.cursor()
   for index, row in df.iterrows():
       cur.execute("SELECT * from matches where h_team = %s AND a_team = %s AND stage = %s;", (row['h_team'], row['a_team'], row['stage']))
